@@ -16,6 +16,51 @@ The app relies on a secret set as the environment variable `JWT_SECRET` to produ
 
 a037a6214462540e5adbe64aa826d456-682561992.us-east-2.elb.amazonaws.com
 
+## __env_file__ : .env_file
+LOG_LEVEL='INFO'
+JWT_SECRET='myucicdvtsk'
+TEST_SECRET='TestSecret'
+TEST_TOKEN='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE1NjEzMDY3OTAsIm5iZiI6MTU2MDA5NzE5MCwiZW1haWwiOiJ3b2xmQHRoZWRvb3IuY29tIn0.IpM4VMnqIgOoQeJxUbLT-cRcAjK41jronkVrqRLFmmk'
+TEST_EMAIL='wolf@thedoor.com'
+TEST_PASSWORD='huff-puff'
+
+## Docker
+`.env_file`
+`docker build -t myimage .`
+`docker run --name myContainer --env-file=.env_file -p 80:8080 myimage`
+
+## EKS Cluster
+`kubectl version` __Client Version: v1.28.2__
+`eksctl create cluster --name simple-jwt-api --nodes=2 --version=1.28 --instance-types=t2.medium --region=us-east-2`
+`eksctl delete cluster simple-jwt-api  --region=us-east-2` __DELETE__
+
+`kubectl get nodes`
+
+## IAM Role
+`aws sts get-caller-identity --query Account --output text ` __507793166816__
+`aws iam create-role --role-name UdacityFlaskDeployCBKubectlRole --assume-role-policy-document file://trust.json --output text --query 'Role.Arn'`
+`aws iam put-role-policy --role-name UdacityFlaskDeployCBKubectlRole --policy-name eks-describe --policy-document file://iam-role-policy.json`
+
+## Authorize using EKS RBAC
+`kubectl get -n kube-system configmap/aws-auth -o yaml > /tmp/aws-auth-patch.yml`
+`code /System/Volumes/Data/private/tmp/aws-auth-patch.yml`
+`kubectl patch configmap/aws-auth -n kube-system --patch "$(cat /tmp/aws-auth-patch.yml)"`
+
+## Test Endpoints
+`kubectl get services simple-jwt-api -o wide`
+
+## Misc
+
+aws cloudformation create-stack  --stack-name myStack2 --region us-east-2 --template-body file://template_EC2.yml --parameters file://my_parameters.json
+
+
+export TOKEN=`curl -d '{"email":"mmrvtsk@email.com","password":"busbusbus"}' -H "Content-Type: application/json" -X POST localhost:8080/auth | jq -r '.token'`
+curl --request GET 'http://127.0.0.1:8080/contents' -H "Authorization: Bearer ${TOKEN}" | jq .
+
+export TOKEN=`curl -d '{"email":"mmeqvtsk@gmail.com","password":"busbusbus"}' -H "Content-Type: application/json" -X POST a037a6214462540e5adbe64aa826d456-682561992.us-east-2.elb.amazonaws.com/auth  | jq -r '.token'`
+curl --request GET 'a037a6214462540e5adbe64aa826d456-682561992.us-east-2.elb.amazonaws.com/contents' -H "Authorization: Bearer ${TOKEN}" | jq 
+
+
 ## Prerequisites
 
 * Docker Desktop - Installation instructions for all OSes can be found <a href="https://docs.docker.com/install/" target="_blank">here</a>.
